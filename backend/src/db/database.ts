@@ -16,23 +16,16 @@ export function createDatabase(connectionString = process.env.DATABASE_URL): Dat
   });
 }
 
-/**
- * Executes a callback inside a transaction with RLS context installed using
- * SET LOCAL semantics. The settings disappear automatically at transaction end.
- */
-export async function withTenantTransaction<T>(
+async function withTransaction<T>(
   database: Database,
-  rawContext: TenantContext,
+  setup: (client: PoolClient) => Promise<void>,
   callback: (client: PoolClient) => Promise<T>,
 ): Promise<T> {
-  const context = assertTenantContext(rawContext);
   const client = await database.connect();
 
   try {
     await client.query("BEGIN");
-    await client.query("SELECT set_config('app.user_id', $1, true)", [context.userId]);
-    await client.query("SELECT set_config('app.workspace_id', $1, true)", [context.workspaceId]);
-
+    await setup(client);
     const result = await callback(client);
     await client.query("COMMIT");
     return result;
@@ -42,4 +35,45 @@ export async function withTenantTransaction<T>(
   } finally {
     client.release();
   }
+}
+
+/**
+ * Executes a callback with only the authenticated user installed. This is used
+ * to resolve a workspace membership before the workspace setting is known.
+ */
+export function withUserTransaction<T>(
+  database: Database,
+  userId: string,
+  callback: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  if (!userId) throw new Error("userId is required");
+
+  return withTransaction(
+    database,
+    (client) => client
+      .query("SELECT set_config('app.user_id', $1, true)", [userId])
+      .then(() => undefined),
+    callback,
+  );
+}
+
+/**
+ * Executes a callback inside a transaction with RLS context installed using
+ * transaction-local PostgreSQL settings.
+ */
+export function withTenantTransaction<T>(
+  database: Database,
+  rawContext: TenantContext,
+  callback: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const context = assertTenantContext(rawContext);
+
+  return withTransaction(
+    database,
+    async (client) => {
+      await client.query("SELECT set_config('app.user_id', $1, true)", [context.userId]);
+      await client.query("SELECT set_config('app.workspace_id', $1, true)", [context.workspaceId]);
+    },
+    callback,
+  );
 }

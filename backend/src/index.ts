@@ -1,5 +1,11 @@
 export { assertTenantContext } from "./auth/tenant-context.js";
 export type { TenantContext, WorkspaceRole } from "./auth/tenant-context.js";
-export { createDatabase, withTenantTransaction } from "./db/database.js";
+export { verifyBearerToken } from "./auth/token.js";
+export type { AuthTokenClaims, TokenVerifierOptions } from "./auth/token.js";
+export { resolveTenantContext } from "./auth/workspace-resolver.js";
+export { createDatabase, withTenantTransaction, withUserTransaction } from "./db/database.js";
 export { createReplyDecisionDraft } from "./http/reply-service.js";
+export { createAuthMiddleware, requireRoles, tenantFrom } from "./http/auth-middleware.js";
+export { registerApiRoutes } from "./http/routes.js";
+export { createApp } from "./server.js";
 export { WorkspaceRepository } from "./repositories/workspace-repository.js";

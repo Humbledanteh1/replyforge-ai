@@ -5,15 +5,19 @@
   "description": "Tenant-scoped backend foundation for ReplyForge AI",
   "type": "module",
   "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --test"
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
+    "fastify": "^5.2.1",
     "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

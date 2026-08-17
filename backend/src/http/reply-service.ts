@@ -1,32 +1,22 @@
 import type { TenantContext } from "../auth/tenant-context.js";
 import { withTenantTransaction, type Database } from "../db/database.js";
-import { WorkspaceRepository } from "../repositories/workspace-repository.js";
+import { WorkspaceRepository, type ReplyDecisionSummary } from "../repositories/workspace-repository.js";
 
 export type CreateReplyDecisionInput = {
   conversationId: string;
   customerMessage: string;
 };
 
-export type ReplyDecisionDraft = {
-  workspaceId: string;
-  conversationId: string;
-  state: "needs_review";
-  customerMessage: string;
-  proposedReply: string;
-  evidenceIds: string[];
-};
-
 /**
- * This is intentionally model-agnostic. Retrieval and generation can be
- * plugged in after tenant-scoped data has been assembled. The important
- * invariant is that all workspace reads and writes happen in one RLS-aware
- * transaction.
+ * Model-agnostic first slice: generation is intentionally represented by a
+ * deterministic review-required fallback until the model gateway is added.
+ * The tenant boundary and persistence contract are already exercised here.
  */
 export async function createReplyDecisionDraft(
   database: Database,
   context: TenantContext,
   input: CreateReplyDecisionInput,
-): Promise<ReplyDecisionDraft> {
+): Promise<ReplyDecisionSummary> {
   return withTenantTransaction(database, context, async (client) => {
     const repository = new WorkspaceRepository(client);
     const deployment = await repository.getActiveDeployment();
@@ -38,12 +28,21 @@ export async function createReplyDecisionDraft(
     const sources = await repository.listApprovedKnowledgeSources();
     const proposedReply =
       "Thanks for reaching out. A member of our team will review your message and follow up shortly.";
-
     const evidenceIds = sources.slice(0, 3).map((source) => source.id);
+
+    const decision = await repository.createReplyDecision({
+      conversationId: input.conversationId,
+      customerMessage: input.customerMessage,
+      proposedReply,
+      evidenceIds,
+      promptVersion: "fallback-v1",
+      modelName: "replyforge-fallback",
+    });
+
     await repository.appendAuditEvent({
       eventType: "reply_decision.draft_created",
-      entityType: "conversation",
-      entityId: input.conversationId,
+      entityType: "reply_decision",
+      entityId: decision.id,
       payload: {
         deploymentId: deployment.deploymentId,
         evidenceIds,
@@ -51,13 +50,6 @@ export async function createReplyDecisionDraft(
       },
     });
 
-    return {
-      workspaceId: context.workspaceId,
-      conversationId: input.conversationId,
-      state: "needs_review",
-      customerMessage: input.customerMessage,
-      proposedReply,
-      evidenceIds,
-    };
+    return decision;
   });
 }
