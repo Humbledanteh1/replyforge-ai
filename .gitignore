@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Build and coverage output
+dist/
+build/
+coverage/
+.next/
+
+# Local tooling
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Python caches (useful for future evaluation and API services)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Temporary files
+.tmp/
+tmp/
