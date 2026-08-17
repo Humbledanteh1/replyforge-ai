@@ -61,7 +61,9 @@ replyforge-ai/
 ├── .github/
 │   └── ISSUE_TEMPLATE/       # Structured contribution and product feedback templates
 ├── docs/
-│   └── product-brief.md      # Product scope, personas, and first-release direction
+│   ├── agent-system-prompt.md # Core prompt, response contract, and runtime invariants
+│   ├── architecture.md        # Multi-tenant architecture and request lifecycle
+│   └── product-brief.md        # Product scope, personas, and first-release direction
 ├── examples/
 │   └── sample-agent-profile.json
 ├── src/
@@ -83,6 +85,10 @@ The first release should focus on a reliable core loop rather than a large numbe
 5. The agent drafts a grounded response and records the reasoning context used for quality review.
 
 The initial implementation can begin with a web chat or draft-only email workflow. Additional channels should be added after the core experience demonstrates strong accuracy, safe escalation, and clear client value.
+
+## Implementation blueprint
+
+The first implementation blueprint is documented in [docs/agent-system-prompt.md](docs/agent-system-prompt.md) and [docs/architecture.md](docs/architecture.md). Together they define the prompt layers, structured response contract, tenant boundaries, request lifecycle, policy gates, human review path, and recommended modular-monolith starting point.
 
 ## Project status
 
