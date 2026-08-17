@@ -60,6 +60,11 @@ Agent sends, requests approval, or escalates to a human
 replyforge-ai/
 ├── .github/
 │   └── ISSUE_TEMPLATE/       # Structured contribution and product feedback templates
+├── backend/
+│   ├── src/                  # Tenant-aware transaction and repository skeleton
+│   └── README.md             # Backend isolation contract
+├── db/
+│   └── migrations/           # PostgreSQL schema and row-level security policies
 ├── docs/
 │   ├── agent-system-prompt.md # Core prompt, response contract, and runtime invariants
 │   ├── architecture.md        # Multi-tenant architecture and request lifecycle
@@ -85,6 +90,10 @@ The first release should focus on a reliable core loop rather than a large numbe
 5. The agent drafts a grounded response and records the reasoning context used for quality review.
 
 The initial implementation can begin with a web chat or draft-only email workflow. Additional channels should be added after the core experience demonstrates strong accuracy, safe escalation, and clear client value.
+
+## Backend foundation
+
+The repository now includes an initial PostgreSQL migration and TypeScript backend skeleton for multi-tenant isolation. The migration enables forced row-level security on workspace-owned tables, while the backend installs the authenticated user and resolved workspace into transaction-local session settings before repository queries run. See [backend/README.md](backend/README.md) for the isolation contract and [db/migrations/001_initial_multi_tenant.sql](db/migrations/001_initial_multi_tenant.sql) for the schema.
 
 ## Implementation blueprint
 
